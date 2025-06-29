@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>心理經濟耐壓模擬器</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4a6fa5;
+            --secondary: #ff6384;
+            --tertiary: #36a2eb;
+            --text: #333;
+            --bg: #f8f9fa;
+            --card-bg: #fff;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            padding: 2rem;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        h1::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 25%;
+            width: 50%;
+            height: 3px;
+            background: linear-gradient(to right, var(--secondary), var(--tertiary));
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group:hover {
+            box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #ddd;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: var(--secondary);
+        }
+
+        .value-display {
+            min-width: 30px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(to right, var(--secondary), var(--primary));
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 2rem 0;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #result {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            background-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0.2rem 0.5rem rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .result-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+            background: linear-gradient(to right, var(--secondary), var(--tertiary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .result-level {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .result-quote {
+            font-style: italic;
+            padding: 1rem;
+            border-left: 3px solid var(--tertiary);
+            background-color: rgba(54, 162, 235, 0.1);
+            margin-top: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 2rem;
+        }
+
+        .info-icon {
+            color: var(--primary);
+            margin-left: 0.5rem;
+            cursor: help;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: normal;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .slider-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .value-display {
+                text-align: right;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>心理經濟耐壓模擬器 <i class="fas fa-brain"></i></h1>
+
+        <form id="stressForm">
+            <div class="form-group">
+                <label>
+                    1. 收入是否足夠？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您目前的收入是否能滿足基本生活需求與儲蓄目標</span>
+                    </span>
+                    <span class="value-display" id="incomeValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>不足</span>
+                    <input type="range" min="0" max="5" value="2" name="income" id="income">
+                    <span>充足</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    2. 是否有債務壓力？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">包括貸款、信用卡債務等任何形式的負債壓力</span>
+                    </span>
+                    <span class="value-display" id="debtValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>無壓力</span>
+                    <input type="range" min="0" max="5" value="2" name="debt" id="debt">
+                    <span>壓力大</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    3. 是否需支援家庭？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您需要負擔家庭開支或照顧家人的程度</span>
+                    </span>
+                    <span class="value-display" id="familyValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>無需</span>
+                    <input type="range" min="0" max="5" value="2" name="family" id="family">
+                    <span>負擔重</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    4. 突發支出多寡？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您面臨意外開支的頻率與對財務的影響</span>
+                    </span>
+                    <span class="value-display" id="emergencyValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>很少</span>
+                    <input type="range" min="0" max="5" value="2" name="emergency" id="emergency">
+                    <span>頻繁</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    5. 睡眠品質如何？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您的睡眠時長與質量，是否經常失眠或睡眠不足</span>
+                    </span>
+                    <span class="value-display" id="sleepValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>優良</span>
+                    <input type="range" min="0" max="5" value="2" name="sleep" id="sleep">
+                    <span>不佳</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    6. 情緒穩定程度？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您日常情緒波動與壓力反應的強度</span>
+                    </span>
+                    <span class="value-display" id="moodValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>穩定</span>
+                    <input type="range" min="0" max="5" value="2" name="mood" id="mood">
+                    <span>波動大</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    7. 人生是否失控感強烈？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您對生活掌控感的喪失程度</span>
+                    </span>
+                    <span class="value-display" id="chaosValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>可控</span>
+                    <input type="range" min="0" max="5" value="2" name="chaos" id="chaos">
+                    <span>失控</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    8. 有無固定喘息時間？
+                    <span class="tooltip">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <span class="tooltiptext">評估您是否有足夠的個人時間進行放鬆與充電</span>
+                    </span>
+                    <span class="value-display" id="breakValue">2</span>
+                </label>
+                <div class="slider-container">
+                    <span>充足</span>
+                    <input type="range" min="0" max="5" value="2" name="break" id="break">
+                    <span>缺乏</span>
+                </div>
+            </div>
+
+            <button type="submit">
+                <i class="fas fa-calculator"></i> 計算我的耐壓指數
+            </button>
+        </form>
+
+        <div id="result" style="display: none;">
+            <h2>您的耐壓評估結果</h2>
+            <div class="result-score" id="scoreDisplay">0</div>
+            <div class="result-level" id="levelDisplay"></div>
+            <div class="chart-container">
+                <canvas id="chart"></canvas>
+            </div>
+            <div class="result-quote" id="quoteDisplay"></div>
+            <div id="adviceDisplay"></div>
+        </div>
+    </div>
+
+    <footer>
+        <p>此工具僅供參考，如需專業協助請洽心理諮商或財務顧問</p>
+        <p>© 2025 心理經濟耐壓模擬器 | 更新日期: 2025-06-29</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById("stressForm");
+            const result = document.getElementById("result");
+            const scoreDisplay = document.getElementById("scoreDisplay");
+            const levelDisplay = document.getElementById("levelDisplay");
+            const quoteDisplay = document.getElementById("quoteDisplay");
+            const adviceDisplay = document.getElementById("adviceDisplay");
+
+            // 滑桿數值顯示更新
+            const sliders = document.querySelectorAll('input[type="range"]');
+            sliders.forEach(slider => {
+                const valueDisplay = document.getElementById(`${slider.id}Value`);
+                valueDisplay.textContent = slider.value;
+
+                slider.addEventListener('input', function () {
+                    valueDisplay.textContent = this.value;
+                });
+            });
+
+            // 名言庫擴充
+            const quotes = [
+                {
+                    text: "你不是廢，你只是經濟體制下的靈魂失速者。",
+                    minScore: 0,
+                    maxScore: 40
+                },
+                {
+                    text: "建議你今天去走失一次，等社會找不到你才放你自由。",
+                    minScore: 30,
+                    maxScore: 60
+                },
+                {
+                    text: "等你發薪前先放棄自尊，發薪後再繼續自我懷疑。",
+                    minScore: 40,
+                    maxScore: 70
+                },
+                {
+                    text: "去便利商店花 59 元買快樂，至少比心理諮商便宜。",
+                    minScore: 50,
+                    maxScore: 80
+                },
+                {
+                    text: "人生不是 RPG，是你早就打錯職業但還不能重開的爛手遊。",
+                    minScore: 60,
+                    maxScore: 100
+                },
+                {
+                    text: "成年人的崩潰都是靜音的，連呼吸都要分期付款。",
+                    minScore: 70,
+                    maxScore: 100
+                },
+                {
+                    text: "你的抗壓性不是變強了，只是麻木的層級提高了。",
+                    minScore: 50,
+                    maxScore: 90
+                }
+            ];
+
+            // 建議庫
+            const advice = {
+                low: [
+                    "您的壓力水平較低，保持良好習慣即可",
+                    "建議定期進行自我評估，預防壓力累積",
+                    "可考慮發展新的興趣愛好，增強心理韌性"
+                ],
+                medium: [
+                    "您的壓力處於警戒線邊緣，建議開始採取減壓措施",
+                    "每週安排至少半天的完全休息時間",
+                    "考慮與信任的人談談您的壓力來源",
+                    "練習深呼吸或簡短冥想，每天5-10分鐘"
+                ],
+                high: [
+                    "您的壓力水平已達高風險，建議立即採取行動",
+                    "優先處理最緊迫的壓力源，尋求專業協助",
+                    "建立規律的睡眠與運動習慣，即使時間很短",
+                    "考慮暫時減少非必要責任與承諾"
+                ],
+                extreme: [
+                    "您的壓力水平極高，強烈建議尋求專業幫助",
+                    "立即與心理健康專業人員聯繫",
+                    "告知親友您目前的狀態，建立支持網絡",
+                    "暫時放下非關鍵事務，專注於基本需求"
+                ]
+            };
+
+            let chart = null;
+
+            // 表單提交處理
+            form.onsubmit = function (e) {
+                e.preventDefault();
+                const data = new FormData(form);
+
+                // 計算經濟壓力分數 (加權1.2)
+                const econ = (
+                    parseInt(data.get("income")) +
+                    parseInt(data.get("debt")) +
+                    parseInt(data.get("family")) +
+                    parseInt(data.get("emergency"))
+                ) * 1.2;
+
+                // 計算心理壓力分數 (加權1.5)
+                const psych = (
+                    parseInt(data.get("sleep")) +
+                    parseInt(data.get("mood")) +
+                    parseInt(data.get("chaos")) +
+                    parseInt(data.get("break"))
+                ) * 1.5;
+
+                // 計算總分 (0-100)
+                const totalPossible = 42; // (4項*5分)*1.2 + (4項*5分)*1.5 = 24 + 30 = 54
+                const rawScore = econ + psych;
+                const index = Math.round((rawScore / totalPossible) * 100);
+
+                // 確定壓力等級
+                let level, levelClass;
+                if (index < 30) {
+                    level = "低風險區";
+                    levelClass = "low";
+                } else if (index < 50) {
+                    level = "警戒區";
+                    levelClass = "medium";
+                } else if (index < 70) {
+                    level = "高壓區";
+                    levelClass = "high";
+                } else {
+                    level = "危機區";
+                    levelClass = "extreme";
+                }
+
+                // 顯示結果
+                scoreDisplay.textContent = index;
+                levelDisplay.textContent = level;
+                levelDisplay.className = `result-level ${levelClass}`;
+
+                // 選擇適合的名言
+                const applicableQuotes = quotes.filter(q => index >= q.minScore && index <= q.maxScore);
+                const selectedQuote = applicableQuotes.length > 0
+                    ? applicableQuotes[Math.floor(Math.random() * applicableQuotes.length)].text
+                    : "壓力是現代生活的常態，但不必獨自承受。";
+
+                quoteDisplay.innerHTML = `<i class="fas fa-quote-left"></i> ${selectedQuote} <i class="fas fa-quote-right"></i>`;
+
+                // 顯示建議
+                const applicableAdvice = advice[levelClass];
+                adviceDisplay.innerHTML = `
+          <h3><i class="fas fa-lightbulb"></i> 建議措施</h3>
+          <ul>
+            ${applicableAdvice.map(item => `<li>${item}</li>`).join('')}
+          </ul>
+        `;
+
+                // 顯示結果區
+                result.style.display = "block";
+
+                // 滾動到結果
+                result.scrollIntoView({ behavior: 'smooth' });
+
+                // 繪製圖表
+                const ctx = document.getElementById("chart").getContext("2d");
+                if (chart) chart.destroy();
+
+                chart = new Chart(ctx, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["經濟壓力", "心理壓力"],
+                        datasets: [{
+                            data: [econ, psych],
+                            backgroundColor: ["#ff6384", "#36a2eb"],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: {
+                                        size: 14
+                                    },
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = Math.round((value / total) * 100);
+                                        return `${label}: ${value.toFixed(1)}分 (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '65%',
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
+                        }
+                    }
+                });
+            };
+
+            // 初始化表單
+            form.dispatchEvent(new Event('submit'));
+        });
+    </script>
+</body>
+
+</html>
